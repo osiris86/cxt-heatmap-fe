@@ -10,9 +10,19 @@
     timestamp: Date
   }[]
 
+  $: temperaturePoints = temperatures.map(({ place, temperature }) => {
+    const seatLocation = saalplanMap[place as keyof typeof saalplanMap]
+    return {
+      x: seatLocation.x * w / IMAGE_WIDTH,
+      y: seatLocation.y * h / IMAGE_HEIGHT,
+      value: temperature
+    }
+  })
+
   const IMAGE_WIDTH = 1903
   const IMAGE_HEIGHT = 1124
 
+  let canvasWrapper: HTMLDivElement;
   let canvas: HTMLCanvasElement;
 	let context: CanvasRenderingContext2D | null;
   let w: number;
@@ -27,21 +37,8 @@
 		handleSize()
 	})
 
-  const convertTemperatures = () => {
-    return temperatures.map(({ place, temperature }) => {
-      const seatLocation = saalplanMap[place as keyof typeof saalplanMap]
-      return {
-        x: seatLocation.x * w / IMAGE_WIDTH,
-        y: seatLocation.y * h / IMAGE_HEIGHT,
-        value: temperature
-      }
-    })
-  }
-
   const draw = () => {
     if (!context) return;
-
-    const temperaturePoints = convertTemperatures()
 
     const img = new Image()
     const temperatureMap = new TemperatureMap(context)
@@ -68,19 +65,39 @@
 		h = width / IMAGE_WIDTH * IMAGE_HEIGHT
     canvas.width = w
     canvas.height = h
-    canvas.style.height = h + 'px'
+    canvasWrapper.style.height = h + 'px'
     draw()
 	}
 </script>
 
 <svelte:window on:resize={handleSize} />
 
-<canvas on:resize={handleSize} bind:this={canvas} />
+<div class="canvas-wrapper" bind:this={canvasWrapper}>
+  <canvas bind:this={canvas} />
+  <div class="info-overlay">
+    {#if temperaturePoints}
+      {#each temperaturePoints as temp}
+        <div class="info-element" style={ "left: " + (temp.x-8) + "px; top: " + (temp.y-8) + "px"}></div>
+	    {/each}
+    {/if}
+  </div>
+</div>
 
 
 <style>
+  .info-element {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background: green;
+  }
+  .canvas-wrapper {
+    position: relative;
+    width: 100%;
+  }
   canvas {
     width: 100%;
+    height: 100%;
     background: white;
   }
 </style>
