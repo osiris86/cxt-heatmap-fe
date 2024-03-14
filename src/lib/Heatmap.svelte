@@ -3,6 +3,13 @@
   import bestuhlungsplan from '../assets/bestuhlungsplan_cxt25.png';
   import { TemperatureMap } from './temperatureMap'
   import { saalplanMap } from './saalplanMap'
+  import Tooltip, {
+    Wrapper,
+    Title,
+    Content,
+  } from '@smui/tooltip';
+  import moment from 'moment/min/moment-with-locales';
+  moment.locale('de');
 
   export let temperatures: {
     place: string,
@@ -10,14 +17,21 @@
     timestamp: Date
   }[]
 
-  $: temperaturePoints = temperatures.map(({ place, temperature }) => {
+  $: temperaturePoints = temperatures.map(({ place, temperature, timestamp }) => {
     const seatLocation = saalplanMap[place as keyof typeof saalplanMap]
     return {
       x: seatLocation.x * w / IMAGE_WIDTH,
       y: seatLocation.y * h / IMAGE_HEIGHT,
-      value: temperature
+      place,
+      timestamp,
+      value: temperature,
+      ago: moment(timestamp).fromNow()
     }
   })
+  $: {
+		console.log('drawing temperatures ' + temperaturePoints);
+    draw();
+	}
 
   const IMAGE_WIDTH = 1903
   const IMAGE_HEIGHT = 1124
@@ -37,7 +51,7 @@
 		handleSize()
 	})
 
-  const draw = () => {
+  $: draw = () => {
     if (!context) return;
 
     const img = new Image()
@@ -68,6 +82,13 @@
     canvasWrapper.style.height = h + 'px'
     draw()
 	}
+
+  const updateAgo = (index: number) => {
+    const ago = moment(temperaturePoints[index].timestamp).fromNow()
+    console.log('new value: ' + ago)
+    temperaturePoints[index].ago = ago;
+    temperaturePoints = temperaturePoints;
+  }
 </script>
 
 <svelte:window on:resize={handleSize} />
@@ -76,8 +97,18 @@
   <canvas bind:this={canvas} />
   <div class="info-overlay">
     {#if temperaturePoints}
-      {#each temperaturePoints as temp}
-        <div class="info-element" style={ "left: " + (temp.x-8) + "px; top: " + (temp.y-8) + "px"}></div>
+      {#each temperaturePoints as temp, index}
+        <Wrapper rich>
+          <div role="button" tabindex={index} style={ "position: absolute; width: 16px; height: 16px; left: " + (temp.x-8) + "px; top: " + (temp.y-8) + "px"} on:mouseover={(event) => updateAgo(index)} on:focus={undefined}>
+          </div>
+          <Tooltip>
+            <Title>{temp.place}</Title>
+            <Content>
+              Gemessene Temperatur: <strong>{temp.value}°C</strong><br/>
+              gemessen {temp.ago}
+            </Content>
+          </Tooltip>
+        </Wrapper>
 	    {/each}
     {/if}
   </div>
@@ -85,11 +116,12 @@
 
 
 <style>
-  .info-element {
+  .info-overlay {
     position: absolute;
-    width: 16px;
-    height: 16px;
-    background: green;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
   }
   .canvas-wrapper {
     position: relative;
