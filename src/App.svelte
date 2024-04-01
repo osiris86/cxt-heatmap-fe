@@ -7,7 +7,7 @@
   import { onMount } from 'svelte'
 
   const httpLink = new HttpLink({
-    uri: 'http://localhost:3000/graphql'
+    uri: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/graphql' : 'https://cxt-heatmap.suwes.uber.space/graphql'
   });
 
 
@@ -59,7 +59,6 @@
         timestamp: t.timestamp
       }
     })
-    console.log(res)
 
     const subscription = await client.subscribe({query: gql`
       subscription {
