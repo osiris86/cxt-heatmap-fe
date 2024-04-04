@@ -10,9 +10,8 @@
     uri: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/graphql' : 'https://cxt-heatmap.suwes.uber.space/graphql'
   });
 
-
   const wsLink = new GraphQLWsLink(createClient({
-    url: 'ws://localhost:3000/graphql',
+    url: process.env.NODE_ENV === 'development' ? 'ws://localhost:3000/graphql' : 'ws://cxt-heatmap.suwes.uber.space',
   }));
 
   const splitLink = split(
