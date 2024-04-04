@@ -11,7 +11,7 @@
   });
 
   const wsLink = new GraphQLWsLink(createClient({
-    url: process.env.NODE_ENV === 'development' ? 'ws://localhost:3000/graphql' : 'wss://cxt-heatmap.suwes.uber.space',
+    url: process.env.NODE_ENV === 'development' ? 'ws://localhost:3000/graphql' : 'wss://cxt-heatmap.suwes.uber.space/graphql',
   }));
 
   const splitLink = split(
