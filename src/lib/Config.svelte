@@ -2,15 +2,13 @@
   import { ApolloClient, InMemoryCache, gql } from '@apollo/client'
   import { onMount } from 'svelte'
   import { push } from 'svelte-spa-router'
+  import { createApolloClient } from './createApolloClient'
 
   let configElements : {id: string, seat: string}[] = []
   let newId = ""
   let newSeat = ""
 
-  const client = new ApolloClient({  
-    cache: new InMemoryCache(),
-    uri: "http://localhost:3000/graphql"
-  });
+  const client = createApolloClient();
 
   const onNewIdChanged = (e: Event) => (newId = (e.target as HTMLSelectElement).value);
   const onNewSeatChanged = (e: Event) => (newSeat = (e.target as HTMLSelectElement).value);

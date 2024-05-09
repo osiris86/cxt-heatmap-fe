@@ -4,10 +4,8 @@
   import { TemperatureMap } from './temperatureMap'
   import { saalplanMap } from './saalplanMap'
   import InfoOverlay from './InfoOverlay.svelte'
-  import { ApolloClient, HttpLink, InMemoryCache, gql, split } from '@apollo/client'
-  import { GraphQLWsLink } from '@apollo/client/link/subscriptions'
-  import { createClient } from 'graphql-ws'
-  import { getMainDefinition } from '@apollo/client/utilities'
+  import { createApolloClient } from './createApolloClient'
+  import { gql } from '@apollo/client'
 
   export let temperatures: {
     place: string,
@@ -15,35 +13,9 @@
     timestamp: Date
   }[] = []
 
-
-
-  const httpLink = new HttpLink({
-    uri: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/graphql' : 'https://cxt-heatmap.suwes.uber.space/graphql'
-  });
-
-  const wsLink = new GraphQLWsLink(createClient({
-    url: process.env.NODE_ENV === 'development' ? 'ws://localhost:3000/graphql' : 'wss://cxt-heatmap.suwes.uber.space/graphql',
-  }));
-
-  const splitLink = split(
-    ({ query }) => {
-      const definition = getMainDefinition(query);
-      return (
-        definition.kind === 'OperationDefinition' &&
-        definition.operation === 'subscription'
-      );
-    },
-    wsLink,
-    httpLink,
-  );
-
-  const client = new ApolloClient({  
-    link: splitLink,
-    cache: new InMemoryCache(),
-  });
+  const client = createApolloClient();
 
   onMount(async () => {
-
     const res = await client
       .query({
         query: gql`

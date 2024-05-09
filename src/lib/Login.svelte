@@ -1,19 +1,16 @@
 <script lang="ts">
-  import { ApolloClient, InMemoryCache, gql } from "@apollo/client"
+  import { gql } from "@apollo/client"
   import {push} from 'svelte-spa-router'
+  import { createApolloClient } from "./createApolloClient"
 
   let password = ""
   let loginError = false
 
+  const client = createApolloClient();
   const onInput = (e: Event) => (password = (e.target as HTMLSelectElement).value);
 
   const onLoginClicked = async () => {
     loginError = false
-    console.log("Login clicked")
-    const client = new ApolloClient({  
-      cache: new InMemoryCache(),
-      uri: "http://localhost:3000/graphql"
-    });
     try {
       const resp = await client.mutate({
         mutation: gql`
@@ -25,7 +22,6 @@
       localStorage.setItem("jwt", resp.data.login)
       push("/config")
     } catch (e) {
-      console.log("Login failed")
       loginError = true
     }
   }
