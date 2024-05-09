@@ -4,12 +4,87 @@
   import { TemperatureMap } from './temperatureMap'
   import { saalplanMap } from './saalplanMap'
   import InfoOverlay from './InfoOverlay.svelte'
+  import { ApolloClient, HttpLink, InMemoryCache, gql, split } from '@apollo/client'
+  import { GraphQLWsLink } from '@apollo/client/link/subscriptions'
+  import { createClient } from 'graphql-ws'
+  import { getMainDefinition } from '@apollo/client/utilities'
 
   export let temperatures: {
     place: string,
     temperature: number,
     timestamp: Date
-  }[]
+  }[] = []
+
+
+
+  const httpLink = new HttpLink({
+    uri: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/graphql' : 'https://cxt-heatmap.suwes.uber.space/graphql'
+  });
+
+  const wsLink = new GraphQLWsLink(createClient({
+    url: process.env.NODE_ENV === 'development' ? 'ws://localhost:3000/graphql' : 'wss://cxt-heatmap.suwes.uber.space/graphql',
+  }));
+
+  const splitLink = split(
+    ({ query }) => {
+      const definition = getMainDefinition(query);
+      return (
+        definition.kind === 'OperationDefinition' &&
+        definition.operation === 'subscription'
+      );
+    },
+    wsLink,
+    httpLink,
+  );
+
+  const client = new ApolloClient({  
+    link: splitLink,
+    cache: new InMemoryCache(),
+  });
+
+  onMount(async () => {
+
+    const res = await client
+      .query({
+        query: gql`
+          query {
+            currentTemperatureData {
+              seat
+              value
+              timestamp
+            }
+          }
+        `,
+      })
+    temperatures = res.data.currentTemperatureData.map((t: {seat: string, value: number, timestamp: Date}) => {
+      return {
+        place: t.seat,
+        temperature: t.value,
+        timestamp: t.timestamp
+      }
+    })
+
+    const subscription = await client.subscribe({query: gql`
+      subscription {
+        seatDataChanged {
+          seat
+          value
+          timestamp
+        }
+      }
+    `})
+
+    subscription.subscribe((update) => {
+      const updatedData = update.data.seatDataChanged
+      const index = temperatures.findIndex((t) => t.place === updatedData.seat)
+      temperatures[index] = {
+        place: updatedData.seat,
+        temperature: updatedData.value,
+        timestamp: updatedData.timestamp
+      }
+    })
+
+  })
 
   $: temperaturePoints = temperatures.map(({ place, temperature, timestamp }) => {
     const seatLocation = saalplanMap[place as keyof typeof saalplanMap]
