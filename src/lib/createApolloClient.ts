@@ -7,7 +7,7 @@ export const createApolloClient = () => {
   const currentHost = window.location.host
   const currentProtocol = window.location.protocol
 
-  const wsProtocol = currentProtocol === 'https:' ? 'wss' : 'ws'
+  const wsProtocol = currentProtocol === 'https:' ? 'wss:' : 'ws:'
 
   const httpLink = new HttpLink({
     uri:
