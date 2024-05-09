@@ -3,8 +3,9 @@
   import { getMainDefinition } from '@apollo/client/utilities';
   import { GraphQLWsLink } from '@apollo/client/link/subscriptions';
   import { createClient } from 'graphql-ws';
-  import Heatmap from "./lib/Heatmap.svelte"
   import { onMount } from 'svelte'
+  import Router from 'svelte-spa-router'
+  import routes from './routes'
 
   const httpLink = new HttpLink({
     uri: process.env.NODE_ENV === 'development' ? 'http://localhost:3000/graphql' : 'https://cxt-heatmap.suwes.uber.space/graphql'
@@ -80,41 +81,6 @@
     })
 
   })
-
-  /*let temps = [{
-    place: "A1",
-    temperature: 14,
-    timestamp: new Date()
-   }, {
-    place: "A10",
-    temperature: 24,
-    timestamp: new Date()
-   }, {
-    place: "A20",
-    temperature: 34,
-    timestamp: new Date()
-  }]*/
-
-  /*setTimeout(() => {
-    console.log('Updating positions')
-    temps = [{
-      place: "B1",
-      temperature: 14,
-      timestamp: new Date()
-     }, {
-      place: "B10",
-      temperature: 24,
-      timestamp: new Date()
-     }, {
-      place: "B20",
-      temperature: 34,
-      timestamp: new Date()
-    }]
-  }, 10000)*/
-
 </script>
   
-
-<main>
-  <Heatmap temperatures={temps}/>
-</main>
+<Router {routes} />
