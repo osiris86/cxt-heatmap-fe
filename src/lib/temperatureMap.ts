@@ -304,103 +304,120 @@ export class TemperatureMap {
     }
   }
 
-  drawFull(levels: any, callback: any) {
+  async drawFull(levels: any) {
     'use strict'
-    var self = this,
-      ctx = this.ctx,
-      img = this.ctx.getImageData(0, 0, self.width, self.height),
-      data = img.data,
-      step = 0,
-      col = [],
-      cnt = 0,
-      idx = 0,
-      x = self.limits.xMin,
-      y = self.limits.yMin,
-      w = self.width * 4,
-      wy = w * y,
-      lim = self.points.length,
-      val = 0.0,
-      tBeg = 0,
-      tDif = 0,
-      xBeg = self.limits.xMin,
-      xEnd = self.limits.xMax,
-      yEnd = self.limits.yMax,
-      bucleSteps = 100.0,
-      recursive = function () {
-        //window.requestAnimationFrame(function (timestamp) {
-        tBeg = new Date().getTime()
-        for (cnt = 0; cnt < bucleSteps; cnt = cnt + 1) {
-          val = self.getPointValue(lim, { x: x, y: y })
-          idx = x * 4 + wy
-          if (val !== -255) {
-            col = self.getColor(levels, val)
-            data[idx] = col[0]
-            data[idx + 1] = col[1]
-            data[idx + 2] = col[2]
-            data[idx + 3] = 128
+    return new Promise<void>((resolve, reject) => {
+      var self = this,
+        ctx = this.ctx,
+        img = this.ctx.getImageData(0, 0, self.width, self.height),
+        data = img.data,
+        step = 0,
+        col = [],
+        cnt = 0,
+        idx = 0,
+        x = self.limits.xMin,
+        y = self.limits.yMin,
+        w = self.width * 4,
+        wy = w * y,
+        lim = self.points.length,
+        val = 0.0,
+        tBeg = 0,
+        tDif = 0,
+        xBeg = self.limits.xMin,
+        xEnd = self.limits.xMax,
+        yEnd = self.limits.yMax,
+        bucleSteps = 100.0,
+        recursive = function () {
+          //window.requestAnimationFrame(function (timestamp) {
+          tBeg = new Date().getTime()
+          for (cnt = 0; cnt < bucleSteps; cnt = cnt + 1) {
+            val = self.getPointValue(lim, { x: x, y: y })
+            idx = x * 4 + wy
+            if (val !== -255) {
+              col = self.getColor(levels, val)
+              data[idx] = col[0]
+              data[idx + 1] = col[1]
+              data[idx + 2] = col[2]
+              data[idx + 3] = 128
+            }
+            x = x + 1
+            if (x > xEnd) {
+              x = xBeg
+              y = y + 1
+              wy = w * y
+            }
           }
-          x = x + 1
-          if (x > xEnd) {
-            x = xBeg
-            y = y + 1
-            wy = w * y
+
+          tDif = new Date().getTime() - tBeg
+          if (tDif === 0) {
+            tDif = 1
           }
+          // bucleSteps = ((16 * bucleSteps) / tDif) * 0.5;
+          bucleSteps = (bucleSteps << 3) / tDif
+
+          ctx.putImageData(img, 0, 0)
+
+          if (y < yEnd) {
+            recursive()
+          } else {
+            resolve()
+          }
+          //})
         }
 
-        tDif = new Date().getTime() - tBeg
-        if (tDif === 0) {
-          tDif = 1
-        }
-        // bucleSteps = ((16 * bucleSteps) / tDif) * 0.5;
-        bucleSteps = (bucleSteps << 3) / tDif
-
-        ctx.putImageData(img, 0, 0)
-
-        if (y < yEnd) {
-          recursive()
-        } else if (typeof callback === 'function') {
-          callback()
-        }
-        //})
-      }
-
-    recursive()
+      recursive()
+    })
   }
 
-  drawPoints(callback: any) {
-    var self = this,
-      PI2 = 2 * Math.PI,
-      ctx = this.ctx
-    //window.requestAnimationFrame(function (timestamp) {
-    var col = [],
-      idx = 0,
-      pnt
+  drawRightAlignedPoints(rightAlignedPoints: any) {
+    return this.drawPoints(rightAlignedPoints, 'right')
+  }
 
-    for (idx = 0; idx < self.points.length; idx = idx + 1) {
-      pnt = self.points[idx]
+  drawLeftAlignedPoints(leftAlignedPoints: any) {
+    return this.drawPoints(leftAlignedPoints, 'left')
+  }
 
-      col = self.getColor(false, pnt.value)
+  drawPoints(points: any, alignment: any) {
+    return new Promise<void>((resolve, reject) => {
+      var self = this,
+        PI2 = 2 * Math.PI,
+        ctx = this.ctx
+      //window.requestAnimationFrame(function (timestamp) {
+      var col = [],
+        idx = 0,
+        pnt
 
-      ctx.fillStyle = 'rgba(255, 255, 255, 128)'
-      ctx.beginPath()
-      ctx.arc(pnt.x, pnt.y, 8, 0, PI2, false)
-      ctx.fill()
+      let xDelta
+      if (alignment === 'left') {
+        xDelta = 8
+      } else {
+        xDelta = 28
+      }
 
-      ctx.lineWidth = 1
-      ctx.strokeStyle = 'rgb(' + col[0] + ', ' + col[1] + ', ' + col[2] + ')'
-      ctx.beginPath()
-      ctx.arc(pnt.x, pnt.y, 8, 0, PI2, false)
-      ctx.stroke()
+      for (idx = 0; idx < points.length; idx = idx + 1) {
+        pnt = points[idx]
 
-      ctx.textAlign = 'center'
-      ctx.textBaseline = 'middle'
-      ctx.fillStyle = 'rgb(0, 0, 0)'
-      ctx.fillText(Math.round(pnt.value), pnt.x, pnt.y)
-    }
+        col = self.getColor(false, pnt.value)
 
-    if (typeof callback === 'function') {
-      callback()
-    }
-    //})
+        ctx.fillStyle = 'rgba(255, 255, 255, 128)'
+        ctx.beginPath()
+        ctx.fillRect(pnt.x - xDelta, pnt.y - 8, 35, 16)
+        //ctx.fill()
+
+        /*ctx.lineWidth = 1
+        ctx.strokeStyle = 'rgb(' + col[0] + ', ' + col[1] + ', ' + col[2] + ')'
+        ctx.beginPath()
+        ctx.arc(pnt.x, pnt.y, 8, 0, PI2, false)
+        ctx.stroke()*/
+
+        ctx.font = '10px sans-serif'
+        ctx.textAlign = 'left'
+        ctx.textBaseline = 'middle'
+        ctx.fillStyle = 'rgb(0, 0, 0)'
+        ctx.fillText(pnt.value.toFixed(1) + '°C', pnt.x - xDelta + 2, pnt.y)
+      }
+
+      resolve()
+    })
   }
 }

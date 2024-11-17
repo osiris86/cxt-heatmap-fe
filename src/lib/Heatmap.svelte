@@ -13,6 +13,9 @@
     timestamp: Date
   }[] = []
 
+  const leftAlignedRows = ['B', 'D', 'F', 'H', 'J', 'L', 'N', 'P', 'R', 'T']
+  const rightAlignedRows = ['A', 'C', 'E', 'G', 'I', 'K', 'M', 'O', 'Q', 'S']
+
   const client = createApolloClient();
 
   onMount(async () => {
@@ -58,7 +61,7 @@
 
   })
 
-  $: temperaturePoints = temperatures.map(({ place, temperature, timestamp }) => {
+  $: temperaturePoints = temperatures.filter((temp) => temp.place !== 'Outside').map(({ place, temperature, timestamp }) => {
     const seatLocation = saalplanMap[place as keyof typeof saalplanMap]
     return {
       x: seatLocation.x * w / IMAGE_WIDTH,
@@ -97,20 +100,26 @@
 	})
     
 
-  $: draw = () => {
+  $: draw = async () => {
     if (temperatureMap) {
       temperatureMap.setPoints(temperaturePoints, w, h);
-      temperatureMap.drawFull(false, () => {
-        temperatureMap.drawPoints(async () => {
-          const img2 = new Image();
-          img2.onload = () => {
-            if (!context) return;
-            context.drawImage(img, 0, 0, img.width, img.height, 0, 0, w, h);
-            context.drawImage(img2, 0, 0, w, h);
-          };
-          img2.src = canvas.toDataURL();
-        });
-      });
+      const leftAlignedPoints = temperaturePoints.filter((point) => leftAlignedRows.indexOf(point.place.substring(0, 1)) !== -1).map((point) => { 
+        return {x: point.x, y: point.y, value: point.value}
+      })
+      const rightAlignedPoints = temperaturePoints.filter((point) => rightAlignedRows.indexOf(point.place.substring(0, 1)) !== -1).map((point) => { 
+        return {x: point.x, y: point.y, value: point.value}
+      })
+      console.log('leftAlignedPoints', leftAlignedPoints)
+      await temperatureMap.drawFull(false)
+      await temperatureMap.drawLeftAlignedPoints(leftAlignedPoints)
+      await temperatureMap.drawRightAlignedPoints(rightAlignedPoints)
+      const img2 = new Image();
+      img2.onload = () => {
+        if (!context) return;
+        context.drawImage(img, 0, 0, img.width, img.height, 0, 0, w, h);
+        context.drawImage(img2, 0, 0, w, h);
+      };
+      img2.src = canvas.toDataURL();
     }
   }
 
