@@ -61,8 +61,17 @@
 
   })
 
-  $: temperaturePoints = temperatures.filter((temp) => temp.place !== 'Outside').map(({ place, temperature, timestamp }) => {
+  $: temperaturePoints = temperatures.map(({ place, temperature, timestamp }) => {
     const seatLocation = saalplanMap[place as keyof typeof saalplanMap]
+    if (place === 'Outside') {
+      return {
+        x: 0,
+        y: 890 * h / IMAGE_HEIGHT,
+        place,
+        timestamp,
+        value: temperature,
+      }
+    }
     return {
       x: seatLocation.x * w / IMAGE_WIDTH,
       y: seatLocation.y * h / IMAGE_HEIGHT,
@@ -72,7 +81,6 @@
     }
   })
   $: {
-		console.log('drawing temperatures ' + temperaturePoints);
     draw();
 	}
 
@@ -102,17 +110,19 @@
 
   $: draw = async () => {
     if (temperatureMap) {
-      temperatureMap.setPoints(temperaturePoints, w, h);
-      const leftAlignedPoints = temperaturePoints.filter((point) => leftAlignedRows.indexOf(point.place.substring(0, 1)) !== -1).map((point) => { 
+      const outsideTemp = temperaturePoints.find((pnt) => pnt.place === 'Outside')
+      const insideTemps = temperaturePoints.filter((pnt) => pnt.place !== 'Outside')
+      temperatureMap.setPoints(insideTemps, w, h);
+      const leftAlignedPoints = insideTemps.filter((point) => leftAlignedRows.indexOf(point.place.substring(0, 1)) !== -1).map((point) => { 
         return {x: point.x, y: point.y, value: point.value}
       })
-      const rightAlignedPoints = temperaturePoints.filter((point) => rightAlignedRows.indexOf(point.place.substring(0, 1)) !== -1).map((point) => { 
+      const rightAlignedPoints = insideTemps.filter((point) => rightAlignedRows.indexOf(point.place.substring(0, 1)) !== -1).map((point) => { 
         return {x: point.x, y: point.y, value: point.value}
       })
-      console.log('leftAlignedPoints', leftAlignedPoints)
       await temperatureMap.drawFull(false)
       await temperatureMap.drawLeftAlignedPoints(leftAlignedPoints)
       await temperatureMap.drawRightAlignedPoints(rightAlignedPoints)
+      await temperatureMap.drawOutsideTemp(outsideTemp)
       const img2 = new Image();
       img2.onload = () => {
         if (!context) return;

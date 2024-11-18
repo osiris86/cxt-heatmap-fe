@@ -15,7 +15,9 @@
     timestamp: Date
   }[]
 
-  $: temperaturePoints = temperatures.map(({ x, y, place, value, timestamp }) => {
+  $: outsideTemp = temperatures.find((temp) => temp.place === 'Outside')
+
+  $: temperaturePoints = temperatures.filter((temp) => temp.place !== 'Outside').map(({ x, y, place, value, timestamp }) => {
     return {
       x,
       y,
@@ -48,6 +50,19 @@
         </Tooltip>
       </Wrapper>
     {/each}
+    {#if outsideTemp}
+    <Wrapper rich>
+      <div role="button" tabindex={temperaturePoints.length} style={ "position: absolute; width: 82px; height: 40px; left: 0px; top: "+(outsideTemp.y-20)+"px"} on:focus={undefined}>
+      </div>
+      <Tooltip>
+        <Title>Außentemperatur</Title>
+        <Content>
+          Gemessene Temperatur: <strong>{outsideTemp.value.toFixed(1)}°C</strong><br/>
+          gemessen {moment(outsideTemp.timestamp).fromNow()}
+        </Content>
+      </Tooltip>
+    </Wrapper>
+    {/if}
   {/if}
 </div>
 

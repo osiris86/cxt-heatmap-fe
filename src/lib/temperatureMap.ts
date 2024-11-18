@@ -420,4 +420,21 @@ export class TemperatureMap {
       resolve()
     })
   }
+
+  drawOutsideTemp(temp: any) {
+    return new Promise<void>((resolve, reject) => {
+      if (!temp) resolve()
+      this.ctx.fillStyle = 'rgba(255, 255, 255, 128)'
+      this.ctx.fillRect(0, temp.y - 20, 82, 40)
+
+      this.ctx.font = '10px sans-serif'
+      this.ctx.textAlign = 'left'
+      this.ctx.textBaseline = 'middle'
+      this.ctx.fillStyle = 'rgb(0, 0, 0)'
+      this.ctx.fillText('Außentemperatur', temp.x + 2, temp.y - 12)
+      this.ctx.fillText(temp.value.toFixed(1) + '°C', temp.x + 2, temp.y)
+      this.ctx.fillText('<------', temp.x + 2, temp.y + 12)
+      resolve()
+    })
+  }
 }
