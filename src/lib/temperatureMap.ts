@@ -8,6 +8,8 @@ export class TemperatureMap {
   size: { height: number; width: number }
   width: number = 0
   height: number = 0
+  minTemp: number = 22
+  maxTemp: number = 32
 
   constructor(ctx: any) {
     this.ctx = ctx
@@ -101,8 +103,8 @@ export class TemperatureMap {
     var val = value,
       tmp = 0,
       lim = 0.55,
-      min = 22,
-      max = 32,
+      min = this.minTemp,
+      max = this.maxTemp,
       dif = max - min,
       lvs = 10
 
@@ -436,5 +438,77 @@ export class TemperatureMap {
       this.ctx.fillText('<------', temp.x + 2, temp.y + 12)
       resolve()
     })
+  }
+
+  drawScale(ratio: number) {
+    return new Promise<void>((resolve, reject) => {
+      const x = 1665 * ratio
+      const y = 1070 * ratio
+      const width = 220 * ratio
+      const height = 25 * ratio
+      this.ctx.fillStyle = 'rgb(0, 0, 0)'
+      this.ctx.fillRect(x, y, width, height)
+
+      const tempMiddle = (this.minTemp + this.maxTemp) / 2
+      const tempStartMiddle = (this.minTemp + tempMiddle) / 2
+      const tempEndMiddle = (tempMiddle + this.maxTemp) / 2
+
+      // Create linear gradient
+      const startColorArray = this.getColor(false, this.minTemp)
+      const startMiddleColorArray = this.getColor(false, tempStartMiddle)
+      const middleColorArray = this.getColor(false, tempMiddle)
+      const endMiddleColorArray = this.getColor(false, tempEndMiddle)
+      const endColorArray = this.getColor(false, this.maxTemp)
+      const startColor = this.createRgbValue(startColorArray)
+      const startMiddleColor = this.createRgbValue(startMiddleColorArray)
+      const middleColor = this.createRgbValue(middleColorArray)
+      const endMiddleColor = this.createRgbValue(endMiddleColorArray)
+      const endColor = this.createRgbValue(endColorArray)
+      const grad = this.ctx.createLinearGradient(x + 1, y + 1, x + width - 2, y)
+      grad.addColorStop(0, startColor)
+      grad.addColorStop(0.25, startMiddleColor)
+      grad.addColorStop(0.5, middleColor)
+      grad.addColorStop(0.75, endMiddleColor)
+      grad.addColorStop(1, endColor)
+
+      // Fill rectangle with gradient
+      this.ctx.fillStyle = 'rgb(255,255,255)'
+      this.ctx.fillRect(x + 1, y + 1, width - 2, height - 2)
+      this.ctx.fillStyle = grad
+      this.ctx.fillRect(x + 1, y + 1, width - 2, height - 2)
+
+      this.ctx.fillStyle = 'rgb(0,0,0)'
+      this.ctx.fillRect(x, y + height, 1, 5)
+      this.ctx.fillRect(x + width - 1, y + height, 1, 5)
+      this.ctx.fillRect(x + width / 2, y + height, 1, 5)
+      this.ctx.fillRect(x + width / 4, y + height, 1, 5)
+      this.ctx.fillRect(x + width / 2 + width / 4, y + height, 1, 5)
+
+      this.ctx.font = '10px sans-serif'
+      this.ctx.textAlign = 'center'
+      this.ctx.fillStyle = 'rgb(0, 0, 0)'
+      this.ctx.fillText(this.minTemp, x, y + height + 10)
+      this.ctx.fillText(this.maxTemp, x + width - 1, y + height + 10)
+      this.ctx.fillText(tempMiddle, x + width / 2, y + height + 10)
+      this.ctx.fillText(tempStartMiddle, x + width / 4, y + height + 10)
+      this.ctx.fillText(
+        tempEndMiddle,
+        x + width / 2 + width / 4,
+        y + height + 10
+      )
+      resolve()
+    })
+  }
+
+  createRgbValue(tempArray: number[]) {
+    return (
+      'rgba(' +
+      tempArray[0] +
+      ',' +
+      tempArray[1] +
+      ',' +
+      tempArray[2] +
+      ', 0.5)'
+    )
   }
 }

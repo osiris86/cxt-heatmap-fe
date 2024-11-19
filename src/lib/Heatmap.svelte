@@ -123,6 +123,7 @@
       await temperatureMap.drawLeftAlignedPoints(leftAlignedPoints)
       await temperatureMap.drawRightAlignedPoints(rightAlignedPoints)
       await temperatureMap.drawOutsideTemp(outsideTemp)
+      await temperatureMap.drawScale(w/IMAGE_WIDTH)
       const img2 = new Image();
       img2.onload = () => {
         if (!context) return;
