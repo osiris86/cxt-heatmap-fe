@@ -7,11 +7,13 @@
   let configElements : {id: string, seat: string}[] = []
   let newId = ""
   let newSeat = ""
+  let newNetatmoToken = ""
 
   const client = createApolloClient();
 
   const onNewIdChanged = (e: Event) => (newId = (e.target as HTMLSelectElement).value);
   const onNewSeatChanged = (e: Event) => (newSeat = (e.target as HTMLSelectElement).value);
+  const onNewNetatmoTokenChanged = (e: Event) => (newNetatmoToken = (e.target as HTMLSelectElement).value)
   
   const onAddClicked = async () => {
     try {
@@ -65,6 +67,28 @@
     }
   };
 
+  const onNetatmoSaveClicked = async () => {
+    try {
+      await client.mutate({
+        mutation: gql`
+          mutation {
+            setNetatmoRefreshToken(token:"${newNetatmoToken}") 
+          }
+        `,
+        context: {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("jwt")}`
+          }
+        }
+      })
+
+      newNetatmoToken = ""
+    } catch (e) {
+      console.error(e)
+      push('/login')
+    }
+  }
+
   onMount(async () => {
     let jwt = localStorage.getItem("jwt")
     if (!jwt) {
@@ -94,6 +118,12 @@
 </script>
 
 <h1>Config</h1>
+
+<h2>Netatmo Refresh Token</h2>
+<input value={newNetatmoToken} type="text" placeholder="Refresh Token" on:input={onNewNetatmoTokenChanged} />
+<button on:click={onNetatmoSaveClicked}>Save</button>
+
+<h2>Seat Configuration</h2>
 <input value={newId} type="text" placeholder="Id" on:input={onNewIdChanged} />
 <input value={newSeat} type="text" placeholder="Seat" on:input={onNewSeatChanged} />
 <button on:click={onAddClicked}>Add</button>
