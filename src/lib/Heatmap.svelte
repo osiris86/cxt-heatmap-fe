@@ -6,6 +6,8 @@
   import InfoOverlay from './InfoOverlay.svelte'
   import { createApolloClient } from './createApolloClient'
   import { gql } from '@apollo/client'
+  import moment from 'moment/min/moment-with-locales';
+  moment.locale('de');
 
   export let temperatures: {
     place: string,
@@ -111,7 +113,7 @@
   $: draw = async () => {
     if (temperatureMap) {
       const outsideTemp = temperaturePoints.find((pnt) => pnt.place === 'Outside')
-      const insideTemps = temperaturePoints.filter((pnt) => pnt.place !== 'Outside')
+      const insideTemps = temperaturePoints.filter((pnt) => pnt.place !== 'Outside').filter((pnt) => moment().diff(moment(pnt.timestamp), 'minutes') <= 15)
       temperatureMap.setPoints(insideTemps, w, h);
       const leftAlignedPoints = insideTemps.filter((point) => leftAlignedRows.indexOf(point.place.substring(0, 1)) !== -1).map((point) => { 
         return {x: point.x, y: point.y, value: point.value}
